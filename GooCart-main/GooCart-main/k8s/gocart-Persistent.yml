@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gocart
+  labels:
+    app: gocart
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gocart
+  template:
+    metadata:
+      labels:
+        app: gocart
+    spec:
+      containers:
+      - name: gocart
+        image: mohdjishin/goocart
+        ports:
+        - containerPort: 3000 # container port
+        volumeMounts:
+        - name: data # name of the volume
+          mountPath: ./data # mount path inside the container
+ 
+        resources:   # set resource limits
+          requests: # set resource requests minimum
+            cpu: 100m
+            memory: 128Mi
+        
+          limits:   # set resource limits maximum
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: my-pvc # reference the PVC created above
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gocart-service
+spec:
+  selector:
+    app: gocart
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 8080 # service port
+    targetPort: 3000 # container port
+    nodePort: 30000 # node port
+---
+kind: PersistentVolumeClaim # create a persistent volume claim
+apiVersion: v1
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce # set your access mode here
+  resources:
+    requests:
+      storage: 1Gi # set your storage size here
